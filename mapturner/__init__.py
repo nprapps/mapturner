@@ -4,6 +4,7 @@ import argparse
 import os
 import re
 import sys
+import zipfile
 
 import envoy
 import requests
@@ -42,6 +43,10 @@ class MapTurner(object):
         )
 
         self.args = self.argparser.parse_args()
+
+        # Verify mapturner directory exists
+        if not os.path.exists(DATA_DIRECTORY):
+            os.makedirs(DATA_DIRECTORY)
 
         # Load configuration file
         with open(self.args.config, 'r') as f:
