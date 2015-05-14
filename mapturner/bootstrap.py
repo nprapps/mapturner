@@ -5,8 +5,9 @@ import zipfile
 
 import requests
 
+import utils
+
 class BootstrapCommand(object):
-    DATA_DIRECTORY = os.path.expanduser('~/.mapturner')
     DATA_URLS = [
         'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_0_countries.zip',
         'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_populated_places_simple.zip',
@@ -20,12 +21,12 @@ class BootstrapCommand(object):
     def __call__(self, args):
         self.args = args
 
-        if not os.path.exists(self.DATA_DIRECTORY):
-            os.makedirs(self.DATA_DIRECTORY)
+        if not os.path.exists(utils.DATA_DIRECTORY):
+            os.makedirs(utils.DATA_DIRECTORY)
 
         for url in self.DATA_URLS:
             local_filename = url.split('/')[-1]
-            local_path = os.path.join(self.DATA_DIRECTORY, local_filename)
+            local_path = os.path.join(utils.DATA_DIRECTORY, local_filename)
 
             if os.path.exists(local_path):
                 print 'Skipping %s (already exists)' % local_filename
@@ -66,7 +67,7 @@ class BootstrapCommand(object):
     def unzip_file(self, local_path):
         filename = os.path.split(local_path)[1]
         slug = os.path.splitext(filename)[0]
-        path = os.path.join(self.DATA_DIRECTORY, slug)
+        path = os.path.join(utils.DATA_DIRECTORY, slug)
 
         with zipfile.ZipFile(local_path, 'r') as z:
             z.extractall(path)
