@@ -51,4 +51,5 @@ The output will be a topojson file containing topo equivalents of all the input 
 Notes
 -----
 
-CSV and GeoJSON files will not be clipped to the bounding box.
+* As shown above, you can provide a URL instead of a local path. This file will be cached locally so it is not redownloaded on future runs.
+* Shapefile input files will be clipped to the specified bounding box, but CSV and JSON input files will not.
