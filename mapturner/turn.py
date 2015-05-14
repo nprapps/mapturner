@@ -34,13 +34,14 @@ class TurnCommand(object):
         with open(self.args.config, 'r') as f:
             self.config = yaml.load(f)
 
+        geojson_paths = []
+
         for name, layer in self.config['layers'].items():
             if 'path' not in layer:
                 print 'path missing for layer %s' % name
                 return
 
             local_path = self.get_layer(layer['path'])
-            geojson_paths = []
 
             print name
             if layer['type'] == 'shp':
@@ -124,11 +125,14 @@ class TurnCommand(object):
         if os.path.exists(path):
             os.remove(path)
 
-        r = envoy.run('ogr2ogr -f GeoJSON -clipsrc %(bbox)s %(output_path)s %(input_path)s' % {
-            'bbox': self.config['bbox'],
-            'output_path': path,
-            'input_path': local_path
-        })
+        ogr2ogr_cmd = ['ogr2ogr', '-f', 'GeoJSON', '-clipsrc', self.config['bbox']]
+
+        if 'where' in layer:
+            ogr2ogr_cmd.extend(['-where', '"%s"' % layer['where']])
+
+        ogr2ogr_cmd.extend([path, local_path])
+
+        r = envoy.run(' '.join(ogr2ogr_cmd))
 
         if r.std_err:
             print r.std_err
@@ -142,6 +146,8 @@ class TurnCommand(object):
             topo_cmd.extend(['-p', ','.join(layer['properties'])])
 
         topo_cmd.extend(['--', path])
+
+        print ' '.join(topo_cmd)
 
         s = envoy.run(' '.join(topo_cmd))
 
