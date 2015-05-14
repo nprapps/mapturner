@@ -52,6 +52,8 @@ class TurnCommand(object):
             else:
                 raise Exception('Unsupported layer type %s' % layer['type'])
 
+        self.combine_layers(geojson_paths)
+
     def add_argparser(self, root, parents):
         """
         Add arguments for this command.
@@ -62,6 +64,11 @@ class TurnCommand(object):
         parser.add_argument(
             dest='config', action='store',
             help='path to YAML configuration file.'
+        )
+
+        parser.add_argument(
+            dest='output_path', action='store',
+            help='path for TopoJSON file.'
         )
 
         return parser
@@ -126,60 +133,31 @@ class TurnCommand(object):
         if r.std_err:
             print r.std_err
 
+        topo_cmd = ['topojson', '-o', path]
+
+        if 'id-property' in layer:
+            topo_cmd.extend(['--id-property', layer['id-property']])
+
+        if 'properties' in layer:
+            topo_cmd.extend(['-p', ','.join(layer['properties'])])
+
+        topo_cmd.extend(['--', path])
+
+        s = envoy.run(' '.join(topo_cmd))
+
+        if s.std_err:
+            print s.std_err
+
         return path
 
-    def combine_layers(self):
+    def combine_layers(self, paths):
         """
         Combine data layers into a single topojson file.
         """
-        path = os.path.join(utils.DATA_DIRECTORY, self.TEMP_TOPOJSON_FILENAME)
-
-        if os.path.exists(path):
-            os.remove(path)
-
-        paths = [
-            os.path.join(utils.DATA_DIRECTORY, self.TEMP_COUNTRIES_FILENAME),
-            os.path.join(utils.DATA_DIRECTORY, self.TEMP_CITIES_FILENAME),
-        ]
-
-        if self.args.country:
-            paths.append(os.path.join(utils.DATA_DIRECTORY, self.TEMP_NEIGHBORS_FILENAME))
-
-        r = envoy.run('topojson -o %(output_path)s --id-property NAME -p featurecla,city=name,country=NAME -- %(paths)s' % {
-            'output_path': path,
-            'paths': ' '.join(paths)
-        })
-
-        if r.std_err:
-            print r.std_err
-
-    def merge_data(self):
-        path = 'output.json'
-
-        if os.path.exists(path):
-            os.remove(path)
-
-        # No data to append
-        if not self.args.data_paths:
-            r = envoy.run('topojson -o %(output_path)s --bbox -p -- %(paths)s' % {
-                'output_path': path,
-                'paths': os.path.join(utils.DATA_DIRECTORY, self.TEMP_TOPOJSON_FILENAME)
-            })
-
-            if r.std_err:
-                print r.std_err
-
-            return
-
-        data_paths = [
-            os.path.join(utils.DATA_DIRECTORY, self.TEMP_TOPOJSON_FILENAME)
-        ]
-
-        data_paths.extend(self.args.data_paths)
 
         r = envoy.run('topojson -o %(output_path)s --bbox -p -- %(paths)s' % {
-            'output_path': path,
-            'paths': ' '.join(data_paths)
+            'output_path': self.args.output_path,
+            'paths': ' '.join(paths)
         })
 
         if r.std_err:
