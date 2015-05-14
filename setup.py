@@ -14,7 +14,7 @@ if sys.version_info < (2, 7):
 
 setup(
     name='mapturner',
-    version='0.1.2',
+    version='0.1.3',
     description='A command line utility for generating data for locator maps.',
     long_description=open('README.md').read(),
     author='Christopher Groskopf',
