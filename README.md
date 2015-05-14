@@ -47,3 +47,8 @@ mapturner input.yaml output.json
 ```
 
 The output will be a topojson file containing topo equivalents of all the input layers.
+
+Notes
+-----
+
+CSV and GeoJSON files will not be clipped to the bounding box.

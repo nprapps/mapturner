@@ -3,6 +3,7 @@
 import argparse
 import os
 import re
+import shutil
 import sys
 import zipfile
 
@@ -10,7 +11,9 @@ import envoy
 import requests
 import yaml
 
-DATA_DIRECTORY = os.path.expanduser('~/.mapturner')
+ROOT_DIRECTORY = os.path.expanduser('~/.mapturner')
+DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'data')
+TEMP_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'tmp')
 
 class MapTurner(object):
     """
@@ -44,9 +47,12 @@ class MapTurner(object):
 
         self.args = self.argparser.parse_args()
 
-        # Verify mapturner directory exists
+        # Verify mapturner directories exists
         if not os.path.exists(DATA_DIRECTORY):
             os.makedirs(DATA_DIRECTORY)
+
+        if not os.path.exists(TEMP_DIRECTORY):
+            os.makedirs(TEMP_DIRECTORY)
 
         # Load configuration file
         with open(self.args.config, 'r') as f:
@@ -70,12 +76,17 @@ class MapTurner(object):
             elif layer['type'] == 'json':
                 geojson_paths.append(self.process_topojson(name, layer, local_path))
             elif layer['type'] == 'csv':
-                geojson_paths.append(self.process_topojson(name, layer, local_path))
+                named_path = os.path.join(TEMP_DIRECTORY, '%s.csv' % name)
+                shutil.copyfile(local_path, named_path)
+
+                geojson_paths.append(self.process_topojson(name, layer, named_path))
             else:
                 raise Exception('Unsupported layer type: %s' % layer['type'])
 
         # Merge layers
         self.merge(geojson_paths)
+
+        shutil.rmtree(TEMP_DIRECTORY)
 
     def _install_exception_handler(self):
         """
@@ -144,7 +155,7 @@ class MapTurner(object):
         """
         Process a layer using ogr2ogr.
         """
-        output_path = os.path.join(DATA_DIRECTORY, '%s.json' % name)
+        output_path = os.path.join(TEMP_DIRECTORY, '%s.json' % name)
 
         if os.path.exists(output_path):
             os.remove(output_path)
@@ -176,7 +187,7 @@ class MapTurner(object):
         """
         Process layer using topojson.
         """
-        output_path = input_path
+        output_path = os.path.join(TEMP_DIRECTORY, '%s.topojson' % name)
 
         topo_cmd = [
             'topojson',
