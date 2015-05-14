@@ -4,7 +4,9 @@ import sys
 from setuptools import setup
 
 install_requires = [
-    'requests==2.5.0'
+    'requests==2.5.0',
+    'envoy==0.0.3',
+    'pyyaml==3.11'
 ]
 
 if sys.version_info < (2, 7):
