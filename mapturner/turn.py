@@ -45,11 +45,12 @@ class TurnCommand(object):
 
             print name
             if layer['type'] == 'shp':
-                geojson_paths.append(self.process_shp(name, layer, local_path))
+                geojson_path = self.process_ogr2ogr(name, layer, local_path)
+                geojson_paths.append(self.process_topojson(name, layer, geojson_path))
             elif layer['type'] == 'json':
-                self.process_json(layer)
+                geojson_paths.append(self.process_topojson(name, layer, local_path))
             elif layer['type'] == 'csv':
-                self.process_csv(layer)
+                geojson_paths.append(self.process_topojson(name, layer, local_path))
             else:
                 raise Exception('Unsupported layer type %s' % layer['type'])
 
@@ -76,27 +77,26 @@ class TurnCommand(object):
 
     def get_layer(self, path):
         filename = path.split('/')[-1]
-        local_path = os.path.join(utils.DATA_DIRECTORY, filename)
         filetype = os.path.splitext(filename)[1]
 
-        if os.path.exists(local_path):
-            pass
-        elif re.match(r'^[a-zA-Z]+://', path):
-            print 'Downloading %s...' % filename
-            self.download_file(path, local_path)
-        else:
-            raise Exception('%s does not exist' % local_path)
+        if re.match(r'^[a-zA-Z]+://', path):
+            local_path = os.path.join(utils.DATA_DIRECTORY, filename)
+            if not os.path.exists(local_path):
+                print 'Downloading %s...' % filename
+                self.download_file(path, local_path)
+        elif not os.path.exists(path):
+            raise Exception('%s does not exist' % path)
 
         if filetype == '.zip':
             slug = os.path.splitext(filename)[0]
             output_path = os.path.join(utils.DATA_DIRECTORY, slug)
             if not os.path.exists(output_path):
                 print 'Unzipping...'
-                self.unzip_file(local_path, output_path)
+                self.unzip_file(path, output_path)
 
             real_path = output_path
         else:
-            real_path = local_path
+            real_path = path
 
         return real_path
 
@@ -116,7 +116,7 @@ class TurnCommand(object):
         with zipfile.ZipFile(local_path, 'r') as z:
             z.extractall(output_path)
 
-    def process_shp(self, name, layer, local_path):
+    def process_ogr2ogr(self, name, layer, local_path):
         """
         Process shp file.
         """
@@ -137,6 +137,9 @@ class TurnCommand(object):
         if r.std_err:
             print r.std_err
 
+        return path
+
+    def process_topojson(self, name, layer, path):
         topo_cmd = ['topojson', '-o', path]
 
         if 'id-property' in layer:

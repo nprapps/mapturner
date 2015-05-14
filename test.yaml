@@ -29,3 +29,6 @@ layers:
         type: 'shp'
         path: 'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_rivers_lake_centerlines.zip'
         where: featurecla = 'River' AND scalerank < 8
+    quakes:
+        type: 'csv'
+        path: 'examples/nepal.csv'
