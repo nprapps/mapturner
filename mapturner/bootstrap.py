@@ -12,7 +12,9 @@ class BootstrapCommand(object):
         'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_0_countries.zip',
         'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_populated_places_simple.zip',
         'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_roads.zip',
-        'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces_lakes.zip'
+        'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces_lakes.zip',
+        'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_rivers_lake_centerlines.zip',
+        'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_lakes.zip'
     ]
 
     def __init__(self):
@@ -47,15 +49,12 @@ class BootstrapCommand(object):
         parser = root.add_parser('bootstrap', parents=parents)
         parser.set_defaults(func=self)
 
-        # parser.add_argument(
-        #     '--secrets',
-        #     dest='secrets', action='store',
-        #     help='Path to the authorization secrets file (client_secrets.json).'
-        # )
-
         return parser
 
     def download_file(self, url, local_path):
+        """
+        Download a file and save locally.
+        """
         response = requests.get(url, stream=True)
 
         with open(local_path, 'wb') as f:
@@ -65,6 +64,9 @@ class BootstrapCommand(object):
                     f.flush()
 
     def unzip_file(self, local_path):
+        """
+        Unzip a local file into a specified directory.
+        """
         filename = os.path.split(local_path)[1]
         slug = os.path.splitext(filename)[0]
         path = os.path.join(utils.DATA_DIRECTORY, slug)
