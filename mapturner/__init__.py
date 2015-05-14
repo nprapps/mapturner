@@ -3,11 +3,9 @@
 import argparse
 import sys
 
-from mapturner.bootstrap import BootstrapCommand
 from mapturner.turn import TurnCommand
 
 COMMANDS = [
-    BootstrapCommand,
     TurnCommand
 ]
 

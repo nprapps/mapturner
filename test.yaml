@@ -14,6 +14,7 @@ layers:
             - 'featurecla'
             - 'city=name'
         where: adm0name = 'Nepal' AND scalerank < 8
+
     neighbors:
         type: 'shp'
         path: 'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_populated_places_simple.zip'
@@ -22,13 +23,16 @@ layers:
             - 'featurecla'
             - 'city=name'
         where: adm0name != 'Nepal' AND scalerank <= 2
+
     lakes:
         type: 'shp'
         path: 'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_lakes.zip'
+
     rivers:
         type: 'shp'
         path: 'http://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_rivers_lake_centerlines.zip'
         where: featurecla = 'River' AND scalerank < 8
+
     quakes:
         type: 'csv'
         path: 'examples/nepal.csv'
