@@ -40,14 +40,17 @@ class TurnCommand(object):
                 return
 
             local_path = self.get_layer(layer['path'])
+            geojson_paths = []
 
-
-        # self.convert_countries()
-        # self.convert_cities()
-        # self.convert_rivers()
-        # self.convert_lakes()
-        # self.combine_layers()
-        # self.merge_data()
+            print name
+            if layer['type'] == 'shp':
+                geojson_paths.append(self.process_shp(name, layer, local_path))
+            elif layer['type'] == 'json':
+                self.process_json(layer)
+            elif layer['type'] == 'csv':
+                self.process_csv(layer)
+            else:
+                raise Exception('Unsupported layer type %s' % layer['type'])
 
     def add_argparser(self, root, parents):
         """
@@ -60,55 +63,6 @@ class TurnCommand(object):
             dest='config', action='store',
             help='path to YAML configuration file.'
         )
-
-        # parser.add_argument(
-        #     dest='xmin', action='store',
-        #     help='Minimum X value of bounding box.'
-        # )
-
-        # parser.add_argument(
-        #     dest='ymin', action='store',
-        #     help='Minimum Y value of bounding box.'
-        # )
-
-        # parser.add_argument(
-        #     dest='xmax', action='store',
-        #     help='Maximum X value of bounding box.'
-        # )
-
-        # parser.add_argument(
-        #     dest='ymax', action='store',
-        #     help='Maximum Y value of bounding box.'
-        # )
-
-        # parser.add_argument(
-        #     metavar='DATA_FILE', nargs='+', dest='data_paths',
-        #     help='Additional GeoJSON or CSV data to merge with output.'
-        # )
-
-        # parser.add_argument(
-        #     '-c', '--country',
-        #     dest='country', action='store',
-        #     help='Country to include details for.'
-        # )
-
-        # parser.add_argument(
-        #     '--scalerank',
-        #     dest='scalerank', action='store', type=int, default=8,
-        #     help='Scalerank for highlighted country (or all countries if none highlighted).'
-        # )
-
-        # parser.add_argument(
-        #     '--neighbor-scalerank',
-        #     dest='neighbor_scalerank', action='store', type=int, default=2,
-        #     help='Scalerank for neighboring countries (if one is highlighted).'
-        # )
-
-        # parser.add_argument(
-        #     '--river-scalerank',
-        #     dest='river_scalerank', action='store', type=int, default=8,
-        #     help='Scalerank for rivers.'
-        # )
 
         return parser
 
@@ -154,124 +108,25 @@ class TurnCommand(object):
         with zipfile.ZipFile(local_path, 'r') as z:
             z.extractall(output_path)
 
-    def convert_countries(self):
+    def process_shp(self, name, layer, local_path):
         """
-        Convert country data to GeoJSON.
+        Process shp file.
         """
-        path = os.path.join(utils.DATA_DIRECTORY, self.TEMP_COUNTRIES_FILENAME)
+        path = os.path.join(utils.DATA_DIRECTORY, '%s.json' % name)
 
         if os.path.exists(path):
             os.remove(path)
 
-        r = envoy.run('ogr2ogr -f GeoJSON -clipsrc %(xmin)s %(ymin)s %(xmax)s %(ymax)s %(output_path)s %(input_path)s' % {
-            'xmin': self.args.xmin,
-            'ymin': self.args.ymin,
-            'xmax': self.args.xmax,
-            'ymax': self.args.ymax,
+        r = envoy.run('ogr2ogr -f GeoJSON -clipsrc %(bbox)s %(output_path)s %(input_path)s' % {
+            'bbox': self.config['bbox'],
             'output_path': path,
-            'input_path': os.path.join(utils.DATA_DIRECTORY, '%s/%s.shp' % (self.COUNTRIES_SHP_NAME, self.COUNTRIES_SHP_NAME))
+            'input_path': local_path
         })
 
         if r.std_err:
             print r.std_err
 
-    def convert_cities(self):
-        """
-        Convert city data to geojson, optionally focusing on a specific country.
-        """
-        if self.args.country:
-            path = os.path.join(utils.DATA_DIRECTORY, self.TEMP_CITIES_FILENAME)
-
-            if os.path.exists(path):
-                os.remove(path)
-
-            # Focused country
-            r = envoy.run('ogr2ogr -f GeoJSON -clipsrc %(xmin)s %(ymin)s %(xmax)s %(ymax)s %(output_path)s -where %(where)s %(input_path)s' % {
-                'xmin': self.args.xmin,
-                'ymin': self.args.ymin,
-                'xmax': self.args.xmax,
-                'ymax': self.args.ymax,
-                'output_path': path,
-                'where': '"adm0name = \'%s\' AND scalerank < %i"' % (self.args.country, self.args.scalerank),
-                'input_path': os.path.join(utils.DATA_DIRECTORY, '%s/%s.shp' % (self.CITIES_SHP_NAME, self.CITIES_SHP_NAME)),
-            })
-
-            if r.std_err:
-                print r.std_err
-
-            path = os.path.join(utils.DATA_DIRECTORY, self.TEMP_NEIGHBORS_FILENAME)
-
-            if os.path.exists(path):
-                os.remove(path)
-
-            # Neighbors
-            r = envoy.run('ogr2ogr -f GeoJSON -clipsrc %(xmin)s %(ymin)s %(xmax)s %(ymax)s %(output_path)s -where %(where)s %(input_path)s' % {
-                'xmin': self.args.xmin,
-                'ymin': self.args.ymin,
-                'xmax': self.args.xmax,
-                'ymax': self.args.ymax,
-                'output_path': path,
-                'where': '"adm0name != \'%s\' AND scalerank < %i"' % (self.args.country, self.args.neighbor_scalerank),
-                'input_path': os.path.join(utils.DATA_DIRECTORY, '%s/%s.shp' % (self.CITIES_SHP_NAME, self.CITIES_SHP_NAME)),
-            })
-
-            if r.std_err:
-                print r.std_err
-        else:
-            path = os.path.join(utils.DATA_DIRECTORY, self.TEMP_CITIES_FILENAME)
-
-            if os.path.exists(path):
-                os.remove(path)
-
-            r = envoy.run('ogr2ogr -f GeoJSON -clipsrc %(xmin)s %(ymin)s %(xmax)s %(ymax)s %(output_path)s -where %(where)s %(input_path)s' % {
-                'xmin': self.args.xmin,
-                'ymin': self.args.ymin,
-                'xmax': self.args.xmax,
-                'ymax': self.args.ymax,
-                'output_path': path,
-                'where': '"scalerank < %i"' % self.args.scalerank,
-                'input_path': os.path.join(utils.DATA_DIRECTORY, '%s/%s.shp' % (self.CITIES_SHP_NAME, self.CITIES_SHP_NAME)),
-            })
-
-            if r.std_err:
-                print r.std_err
-
-    def convert_rivers(self):
-        path = os.path.join(utils.DATA_DIRECTORY, self.TEMP_RIVERS_FILENAME)
-
-        if os.path.exists(path):
-            os.remove(path)
-
-        r = envoy.run('ogr2ogr -f GeoJSON -clipsrc %(xmin)s %(ymin)s %(xmax)s %(ymax)s %(output_path)s -where %(where)s %(input_path)s' % {
-            'xmin': self.args.xmin,
-            'ymin': self.args.ymin,
-            'xmax': self.args.xmax,
-            'ymax': self.args.ymax,
-            'output_path': path,
-            'where': '"featurecla = \'River\' AND scalerank < %i"' % (self.args.river_scalerank),
-            'input_path': os.path.join(utils.DATA_DIRECTORY, '%s/%s.shp' % (self.RIVERS_SHP_NAME, self.RIVERS_SHP_NAME))
-        })
-
-        if r.std_err:
-            print r.std_err
-
-    def convert_lakes(self):
-        path = os.path.join(utils.DATA_DIRECTORY, self.TEMP_LAKES_FILENAME)
-
-        if os.path.exists(path):
-            os.remove(path)
-
-        r = envoy.run('ogr2ogr -f GeoJSON -clipsrc %(xmin)s %(ymin)s %(xmax)s %(ymax)s %(output_path)s %(input_path)s' % {
-            'xmin': self.args.xmin,
-            'ymin': self.args.ymin,
-            'xmax': self.args.xmax,
-            'ymax': self.args.ymax,
-            'output_path': path,
-            'input_path': os.path.join(utils.DATA_DIRECTORY, '%s/%s.shp' % (self.LAKES_SHP_NAME, self.LAKES_SHP_NAME))
-        })
-
-        if r.std_err:
-            print r.std_err
+        return path
 
     def combine_layers(self):
         """
