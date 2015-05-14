@@ -1,0 +1,12 @@
+*.pyc
+*.swp
+.DS_Store
+build
+*.egg-info
+reference
+dist
+*.swo
+docs/_build
+.coverage
+.tox
+cover
