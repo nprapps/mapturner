@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
 import os
+import re
 import subprocess
+import zipfile
 
 import envoy
+import requests
+import yaml
 
 import utils
 
@@ -23,17 +27,27 @@ class TurnCommand(object):
     def __init__(self):
         self.args = None
         self.config = None
-        self.service = None
 
     def __call__(self, args):
         self.args = args
 
-        self.convert_countries()
-        self.convert_cities()
-        self.convert_rivers()
-        self.convert_lakes()
-        self.combine_layers()
-        self.merge_data()
+        with open(self.args.config, 'r') as f:
+            self.config = yaml.load(f)
+
+        for name, layer in self.config['layers'].items():
+            if 'path' not in layer:
+                print 'path missing for layer %s' % name
+                return
+
+            local_path = self.get_layer(layer['path'])
+
+
+        # self.convert_countries()
+        # self.convert_cities()
+        # self.convert_rivers()
+        # self.convert_lakes()
+        # self.combine_layers()
+        # self.merge_data()
 
     def add_argparser(self, root, parents):
         """
@@ -43,55 +57,102 @@ class TurnCommand(object):
         parser.set_defaults(func=self)
 
         parser.add_argument(
-            dest='xmin', action='store',
-            help='Minimum X value of bounding box.'
+            dest='config', action='store',
+            help='path to YAML configuration file.'
         )
 
-        parser.add_argument(
-            dest='ymin', action='store',
-            help='Minimum Y value of bounding box.'
-        )
+        # parser.add_argument(
+        #     dest='xmin', action='store',
+        #     help='Minimum X value of bounding box.'
+        # )
 
-        parser.add_argument(
-            dest='xmax', action='store',
-            help='Maximum X value of bounding box.'
-        )
+        # parser.add_argument(
+        #     dest='ymin', action='store',
+        #     help='Minimum Y value of bounding box.'
+        # )
 
-        parser.add_argument(
-            dest='ymax', action='store',
-            help='Maximum Y value of bounding box.'
-        )
+        # parser.add_argument(
+        #     dest='xmax', action='store',
+        #     help='Maximum X value of bounding box.'
+        # )
 
-        parser.add_argument(
-            metavar='DATA_FILE', nargs='+', dest='data_paths',
-            help='Additional GeoJSON or CSV data to merge with output.'
-        )
+        # parser.add_argument(
+        #     dest='ymax', action='store',
+        #     help='Maximum Y value of bounding box.'
+        # )
 
-        parser.add_argument(
-            '-c', '--country',
-            dest='country', action='store',
-            help='Country to include details for.'
-        )
+        # parser.add_argument(
+        #     metavar='DATA_FILE', nargs='+', dest='data_paths',
+        #     help='Additional GeoJSON or CSV data to merge with output.'
+        # )
 
-        parser.add_argument(
-            '--scalerank',
-            dest='scalerank', action='store', type=int, default=8,
-            help='Scalerank for highlighted country (or all countries if none highlighted).'
-        )
+        # parser.add_argument(
+        #     '-c', '--country',
+        #     dest='country', action='store',
+        #     help='Country to include details for.'
+        # )
 
-        parser.add_argument(
-            '--neighbor-scalerank',
-            dest='neighbor_scalerank', action='store', type=int, default=2,
-            help='Scalerank for neighboring countries (if one is highlighted).'
-        )
+        # parser.add_argument(
+        #     '--scalerank',
+        #     dest='scalerank', action='store', type=int, default=8,
+        #     help='Scalerank for highlighted country (or all countries if none highlighted).'
+        # )
 
-        parser.add_argument(
-            '--river-scalerank',
-            dest='river_scalerank', action='store', type=int, default=8,
-            help='Scalerank for rivers.'
-        )
+        # parser.add_argument(
+        #     '--neighbor-scalerank',
+        #     dest='neighbor_scalerank', action='store', type=int, default=2,
+        #     help='Scalerank for neighboring countries (if one is highlighted).'
+        # )
+
+        # parser.add_argument(
+        #     '--river-scalerank',
+        #     dest='river_scalerank', action='store', type=int, default=8,
+        #     help='Scalerank for rivers.'
+        # )
 
         return parser
+
+    def get_layer(self, path):
+        filename = path.split('/')[-1]
+        local_path = os.path.join(utils.DATA_DIRECTORY, filename)
+        filetype = os.path.splitext(filename)[1]
+
+        if os.path.exists(local_path):
+            pass
+        elif re.match(r'^[a-zA-Z]+://', path):
+            print 'Downloading %s...' % filename
+            self.download_file(path, local_path)
+        else:
+            raise Exception('%s does not exist' % local_path)
+
+        if filetype == '.zip':
+            slug = os.path.splitext(filename)[0]
+            output_path = os.path.join(utils.DATA_DIRECTORY, slug)
+            if not os.path.exists(output_path):
+                print 'Unzipping...'
+                self.unzip_file(local_path, output_path)
+
+            real_path = output_path
+        else:
+            real_path = local_path
+
+        return real_path
+
+    def download_file(self, url, local_path):
+        response = requests.get(url, stream=True)
+
+        with open(local_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+                    f.flush()
+
+    def unzip_file(self, local_path, output_path):
+        """
+        Unzip a local file into a specified directory.
+        """
+        with zipfile.ZipFile(local_path, 'r') as z:
+            z.extractall(output_path)
 
     def convert_countries(self):
         """
