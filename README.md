@@ -45,3 +45,5 @@ Then run it!
 ```
 mapturner input.yaml output.json
 ```
+
+The output will be a topojson file containing topo equivalents of all the input layers.
