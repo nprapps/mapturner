@@ -1,7 +1,7 @@
 mapturner
 =========
 
-A command line utility for generating topojson from various data sources.
+A command line utility for generating topojson from various data sources for fast maps.
 
 Important links:
 
@@ -11,15 +11,28 @@ Important links:
 Install
 -------
 
-```she
+You will need the following non-Python dependencies installed:
+
+* ogr2ogr (GDAL)
+* topojson
+
+User install process:
+
+```sh
 pip install mapturner
 ```
 
-You will also need the following non-Python dependencies installed:
-Requirements:
+Developer install process:
 
-* GDAL (ogr2ogr)
-* topojson
+```sh
+git clone git://github.com/nprapps/mapturner.git
+cd mapturner
+mkvirtualenv mapturner
+
+pip install -r requirements.txt
+
+python setup.py develop
+```
 
 Usage
 -----
@@ -50,6 +63,8 @@ layers:
         path: 'examples/nepal.csv'
 ```
 
+(See [test.yaml](https://github.com/nprapps/mapturner/blob/master/test.yaml) for a complete example.)
+
 Then run it!
 
 ```sh
@@ -61,14 +76,14 @@ How it works
 
 For each layer defined in the configuration file:
 
-* If path is a URL the file will be downloaded and cached.
-* If path is zipped it will be unzipped.
+* If path is a URL the file will be downloaded and cached locally. (It will not be redownloaded on subsequent runs.)
+* If path is to a zipped file it will be unzipped.
 * If the layer type is `shp` it will be clipped to the specified bounding box (using ogr2ogr).
-* If the layer type is `shp` and a `where` attribute is specified, the layer will be filtered by that pseudo-SQL clause.
-* All fields in the layer *not* specified in the `properties` array will be removed.
+* If the layer type is `shp` and a `where` attribute is specified, the layer will be filtered by that clause.
+* All fields in the layer *not* specified in the `properties` array will be removed (to reduce file size).
 * The layer will be converted to topojson (a form of compression).
 
-After each layer has been processed they will be concatenated into a single topojson file. Each layer's key name will be used to identify it in the output.
+After each layer has been processed all of them will be concatenated into a single topojson file. Each layer's key name will be used to identify it in the output.
 
 Notes
 -----
@@ -79,4 +94,4 @@ The following layer types are currently supported:
 * json
 * csv
 
-For a complete explanation of how the `id-property` and `properties` fields work see the [topojson documentation](https://github.com/mbostock/topojson/wiki/Command-Line-Reference).
+For a complete explanation of how the `id-property` and `properties` fields work see the [topojson command-line documentation](https://github.com/mbostock/topojson/wiki/Command-Line-Reference).
