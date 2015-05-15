@@ -61,6 +61,7 @@ layers:
     quakes:
         type: 'csv'
         path: 'examples/nepal.csv'
+        all-properties: True
 ```
 
 (See [test.yaml](https://github.com/nprapps/mapturner/blob/master/test.yaml) for a complete example.)
@@ -80,7 +81,7 @@ For each layer defined in the configuration file:
 * If path is to a zipped file it will be unzipped.
 * If the layer type is `shp` it will be clipped to the specified bounding box (using ogr2ogr).
 * If the layer type is `shp` and a `where` attribute is specified, the layer will be filtered by that clause.
-* All fields in the layer *not* specified in the `properties` array will be removed (to reduce file size).
+* All fields in the layer *not* specified in the `properties` array will be removed (to reduce file size), unless `all-properties` is specified, in which case all will be kept.
 * The layer will be converted to topojson (a form of compression).
 
 After each layer has been processed all of them will be concatenated into a single topojson file. Each layer's key name will be used to identify it in the output.

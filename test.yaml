@@ -36,3 +36,4 @@ layers:
     quakes:
         type: 'csv'
         path: 'examples/nepal.csv'
+        all-properties: True

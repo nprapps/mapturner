@@ -210,7 +210,9 @@ class MapTurner(object):
                 '--id-property', layer['id-property']
             ])
 
-        if 'properties' in layer:
+        if layer.get('all-properties', False):
+            topo_cmd.append('-p')
+        elif 'properties' in layer:
             topo_cmd.extend([
                 '-p', ','.join(layer['properties'])
             ])
