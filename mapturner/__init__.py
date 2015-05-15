@@ -31,12 +31,18 @@ class MapTurner(object):
 
         self.argparser.add_argument(
             dest='config', action='store',
-            help='path to YAML configuration file.'
+            help='Path to YAML configuration file.'
         )
 
         self.argparser.add_argument(
             dest='output_path', action='store',
-            help='path for TopoJSON file.'
+            help='Path to save save TopoJSON file.'
+        )
+
+        self.argparser.add_argument(
+            '-r', '--redownload',
+            dest='redownload', action='store_true',
+            help='Redownload all cached files from urls.'
         )
 
         self.argparser.add_argument(
@@ -114,6 +120,11 @@ class MapTurner(object):
 
             if not os.path.exists(local_path):
                 print 'Downloading %s...' % filename
+                self.download_file(path, local_path)
+            elif self.args.redownload:
+                os.remove(local_path)
+
+                print 'Redownloading %s...' % filename
                 self.download_file(path, local_path)
         # Non-existant file
         elif not os.path.exists(local_path):
