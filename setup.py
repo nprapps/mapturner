@@ -9,28 +9,26 @@ install_requires = [
     'pyyaml==3.11'
 ]
 
-if sys.version_info < (2, 7):
-    install_requires.append('argparse>=1.2.1')
-
 setup(
     name='mapturner',
-    version='0.1.4',
-    description='A command line utility for generating data for locator maps.',
+    version='0.2.0',
+    description='A command line utility for compiling map data.',
     long_description=open('README.md').read(),
     author='Christopher Groskopf',
-    author_email='cgroskopf@npr.com',
+    author_email='chrisgroskopf@gmail.com',
     url='https://github.com/nprapps/mapturner',
     license='MIT',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 2 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Utilities'
     ],

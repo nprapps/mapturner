@@ -69,12 +69,12 @@ class MapTurner(object):
         # Process layers
         for name, layer in self.config['layers'].items():
             if 'path' not in layer:
-                print 'path missing for layer %s' % name
+                sys.stdout.write('path missing for layer %s\n' % name)
                 return
 
             local_path = self.get_real_layer_path(layer['path'])
 
-            print 'Processing %s' % name
+            sys.stdout.write('Processing %s\n' % name)
 
             if layer['type'] == 'shp':
                 geojson_path = self.process_ogr2ogr(name, layer, local_path)
@@ -102,7 +102,7 @@ class MapTurner(object):
             if self.args.verbose:
                 sys.__excepthook__(t, value, traceback)
             else:
-                sys.stderr.write('%s\n' % unicode(value).encode('utf-8'))
+                sys.stderr.write('%s\n' % str(value).encode('utf-8'))
 
         sys.excepthook = handler
 
@@ -119,12 +119,12 @@ class MapTurner(object):
             local_path = os.path.join(DATA_DIRECTORY, filename)
 
             if not os.path.exists(local_path):
-                print 'Downloading %s...' % filename
+                sys.stdout.write('Downloading %s...\n' % filename)
                 self.download_file(path, local_path)
             elif self.args.redownload:
                 os.remove(local_path)
 
-                print 'Redownloading %s...' % filename
+                sys.stdout.write('Redownloading %s...\n' % filename)
                 self.download_file(path, local_path)
         # Non-existant file
         elif not os.path.exists(local_path):
@@ -138,7 +138,7 @@ class MapTurner(object):
             real_path = os.path.join(DATA_DIRECTORY, slug)
 
             if not os.path.exists(real_path):
-                print 'Unzipping...'
+                sys.stdout.write('Unzipping...\n')
                 self.unzip_file(local_path, real_path)
 
         return real_path
@@ -190,7 +190,7 @@ class MapTurner(object):
         r = envoy.run(' '.join(ogr2ogr_cmd))
 
         if r.status_code != 0:
-            print r.std_err
+            sys.stderr.write(r.std_err)
 
         return output_path
 
@@ -225,7 +225,7 @@ class MapTurner(object):
         s = envoy.run(' '.join(topo_cmd))
 
         if s.std_err:
-            print s.std_err
+            sys.stderr.write(s.std_err)
 
         return output_path
 
@@ -239,7 +239,7 @@ class MapTurner(object):
         })
 
         if r.status_code != 0:
-            print r.std_err
+            sys.stderr.write(r.std_err)
 
 
 def _main():
