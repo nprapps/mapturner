@@ -12,9 +12,13 @@ import requests
 from tqdm import tqdm
 import yaml
 
+
 ROOT_DIRECTORY = os.path.expanduser('~/.mapturner')
 DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'data')
 TEMP_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'tmp')
+
+SUPPORTED_FILE_TYPES = ['shp', 'json', 'csv']
+
 
 class MapTurner(object):
     """
@@ -77,18 +81,18 @@ class MapTurner(object):
 
             sys.stdout.write('Layer: %s\n' % name)
 
-            if layer['type'] == 'shp':
+            if layer['type'] not in SUPPORTED_FILE_TYPES:
+                raise ValueError('Unsupported layer type: %s' % layer['type'])
+
+            if layer['type'] in ['shp', 'json']:
                 geojson_path = self.process_ogr2ogr(name, layer, local_path)
                 geojson_paths.append(self.process_topojson(name, layer, geojson_path))
-            elif layer['type'] == 'json':
-                geojson_paths.append(self.process_topojson(name, layer, local_path))
             elif layer['type'] == 'csv':
                 named_path = os.path.join(TEMP_DIRECTORY, '%s.csv' % name)
                 shutil.copyfile(local_path, named_path)
 
                 geojson_paths.append(self.process_topojson(name, layer, named_path))
-            else:
-                raise Exception('Unsupported layer type: %s' % layer['type'])
+
 
         # Merge layers
         self.merge(geojson_paths)
