@@ -1,5 +1,4 @@
-mapturner
-=========
+# mapturner
 
 A command line utility for generating topojson from various data sources for fast maps.
 
@@ -8,8 +7,7 @@ Important links:
 * Repository:           https://github.com/nprapps/mapturner
 * Issues:               https://github.com/nprapps/mapturner/issues
 
-Install
--------
+## Install
 
 You will need the following non-Python dependencies installed:
 
@@ -18,13 +16,13 @@ You will need the following non-Python dependencies installed:
 
 User install process:
 
-```sh
+```
 pip install mapturner
 ```
 
 Developer install process:
 
-```sh
+```
 git clone git://github.com/nprapps/mapturner.git
 cd mapturner
 mkvirtualenv mapturner
@@ -34,12 +32,11 @@ pip install -r requirements.txt
 python setup.py develop
 ```
 
-Usage
------
+## Usage
 
 Define a YAML configuration file, for example:
 
-```yaml
+```
 bbox: '77.25 24.28 91.45 31.5'
 layers:
     countries:
@@ -68,12 +65,19 @@ layers:
 
 Then run it!
 
-```sh
+```
 mapturner input.yaml output.json
 ```
 
-How it works
-------------
+The following layer types are currently supported:
+
+* shp
+* json
+* csv
+
+For a complete explanation of how the `id-property` and `properties` fields work see the [topojson command-line documentation](https://github.com/mbostock/topojson/wiki/Command-Line-Reference).
+
+## How it works
 
 For each layer defined in the configuration file:
 
@@ -86,13 +90,6 @@ For each layer defined in the configuration file:
 
 After each layer has been processed all of them will be concatenated into a single topojson file. Each layer's key name will be used to identify it in the output.
 
-Notes
------
+## Cached data
 
-The following layer types are currently supported:
-
-* shp
-* json
-* csv
-
-For a complete explanation of how the `id-property` and `properties` fields work see the [topojson command-line documentation](https://github.com/mbostock/topojson/wiki/Command-Line-Reference).
+Cached shapefiles are storied in `~/.mapturner`. You may wish to clear this folder periodically to free up space and ensure updated shapefiles are redownloaded.
