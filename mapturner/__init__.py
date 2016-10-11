@@ -75,7 +75,7 @@ class MapTurner(object):
 
             local_path = self.get_real_layer_path(layer['path'])
 
-            sys.stdout.write('Processing %s\n' % name)
+            sys.stdout.write('Layer: %s\n' % name)
 
             if layer['type'] == 'shp':
                 geojson_path = self.process_ogr2ogr(name, layer, local_path)
@@ -120,12 +120,12 @@ class MapTurner(object):
             local_path = os.path.join(DATA_DIRECTORY, filename)
 
             if not os.path.exists(local_path):
-                sys.stdout.write('Downloading %s...\n' % filename)
+                sys.stdout.write('* Downloading %s...\n' % filename)
                 self.download_file(path, local_path)
             elif self.args.redownload:
                 os.remove(local_path)
 
-                sys.stdout.write('Redownloading %s...\n' % filename)
+                sys.stdout.write('* Redownloading %s...\n' % filename)
                 self.download_file(path, local_path)
         # Non-existant file
         elif not os.path.exists(local_path):
@@ -139,7 +139,7 @@ class MapTurner(object):
             real_path = os.path.join(DATA_DIRECTORY, slug)
 
             if not os.path.exists(real_path):
-                sys.stdout.write('Unzipping...\n')
+                sys.stdout.write('* Unzipping...\n')
                 self.unzip_file(local_path, real_path)
 
         return real_path
@@ -188,6 +188,11 @@ class MapTurner(object):
             input_path
         ])
 
+        sys.stdout.write('* Running ogr2ogr\n')
+
+        if self.args.verbose:
+            sys.stdout.write('  %s\n' % ' '.join(ogr2ogr_cmd))
+
         r = envoy.run(' '.join(ogr2ogr_cmd))
 
         if r.status_code != 0:
@@ -223,10 +228,15 @@ class MapTurner(object):
             input_path
         ])
 
-        s = envoy.run(' '.join(topo_cmd))
+        sys.stdout.write('* Running TopoJSON\n')
 
-        if s.std_err:
-            sys.stderr.write(s.std_err)
+        if self.args.verbose:
+            sys.stdout.write('  %s\n' % ' '.join(topo_cmd))
+
+        r = envoy.run(' '.join(topo_cmd))
+
+        if r.status_code != 0:
+            sys.stderr.write(r.std_err)
 
         return output_path
 
@@ -234,10 +244,17 @@ class MapTurner(object):
         """
         Merge data layers into a single topojson file.
         """
-        r = envoy.run('topojson -o %(output_path)s --bbox -p -- %(paths)s' % {
+        merge_cmd = 'topojson -o %(output_path)s --bbox -p -- %(paths)s' % {
             'output_path': self.args.output_path,
             'paths': ' '.join(paths)
-        })
+        }
+
+        sys.stdout.write('Merging layers\n')
+
+        if self.args.verbose:
+            sys.stdout.write('  %s\n' % merge_cmd)
+
+        r = envoy.run(merge_cmd)
 
         if r.status_code != 0:
             sys.stderr.write(r.std_err)
