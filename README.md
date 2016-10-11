@@ -1,6 +1,6 @@
 # mapturner
 
-A command line utility for generating topojson from various data sources for fast maps.
+A command line utility for generating consolidated [Topojson](https://github.com/mbostock/topojson/wiki/Command-Line-Reference) from various data sources. Used for making fast vector maps with D3.
 
 Important links:
 
@@ -9,7 +9,7 @@ Important links:
 
 ## Install
 
-You will need the following non-Python dependencies installed:
+You will need to have the following non-Python dependencies installed:
 
 * ogr2ogr (GDAL)
 * topojson
@@ -71,9 +71,9 @@ mapturner input.yaml output.json
 
 The following layer types are currently supported:
 
-* shp
-* json
-* csv
+* ESRI Shapefile (`shp`)
+* GeoJSON or TopoJSON (`json`)
+* CSV (`csv`)
 
 For a complete explanation of how the `id-property` and `properties` fields work see the [topojson command-line documentation](https://github.com/mbostock/topojson/wiki/Command-Line-Reference).
 
@@ -86,7 +86,7 @@ For each layer defined in the configuration file:
 * If the layer type is `shp` it will be clipped to the specified bounding box (using ogr2ogr).
 * If the layer type is `shp` and a `where` attribute is specified, the layer will be filtered by that clause.
 * All fields in the layer *not* specified in the `properties` array will be removed (to reduce file size), unless `all-properties` is specified, in which case all will be kept.
-* The layer will be converted to topojson (a form of compression).
+* The layer will be converted to [Topojson](https://github.com/mbostock/topojson/wiki/Command-Line-Reference).
 
 After each layer has been processed all of them will be concatenated into a single topojson file. Each layer's key name will be used to identify it in the output.
 
