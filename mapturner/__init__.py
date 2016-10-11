@@ -9,6 +9,7 @@ import zipfile
 
 import envoy
 import requests
+from tqdm import tqdm
 import yaml
 
 ROOT_DIRECTORY = os.path.expanduser('~/.mapturner')
@@ -150,7 +151,7 @@ class MapTurner(object):
         response = requests.get(url, stream=True)
 
         with open(local_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=1024):
+            for chunk in tqdm(response.iter_content(chunk_size=1024), unit='KB'):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
