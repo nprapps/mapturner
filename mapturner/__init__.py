@@ -19,6 +19,16 @@ TEMP_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'tmp')
 
 SUPPORTED_FILE_TYPES = ['shp', 'json', 'csv']
 
+VRT_TEMPLATE = """
+<OGRVRTDataSource>
+    <OGRVRTLayer name="%(name)s">
+        <SrcDataSource>%(source)s</SrcDataSource>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>WGS84</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="%(longitude)s" y="%(latitude)s"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>
+"""
 
 class MapTurner(object):
     """
@@ -74,25 +84,23 @@ class MapTurner(object):
         # Process layers
         for name, layer in self.config['layers'].items():
             if 'path' not in layer:
-                sys.stdout.write('path missing for layer %s\n' % name)
+                raise ValueError('Path missing for layer: %s\n' % name)
                 return
 
-            local_path = self.get_real_layer_path(layer['path'])
+            layer_path = self.get_real_layer_path(layer['path'])
 
             sys.stdout.write('Layer: %s\n' % name)
 
             if layer['type'] not in SUPPORTED_FILE_TYPES:
-                raise ValueError('Unsupported layer type: %s' % layer['type'])
+                raise ValueError('Unsupported layer type: %s\n' % layer['type'])
 
             if layer['type'] in ['shp', 'json']:
-                geojson_path = self.process_ogr2ogr(name, layer, local_path)
-                geojson_paths.append(self.process_topojson(name, layer, geojson_path))
+                input_path = layer_path
             elif layer['type'] == 'csv':
-                named_path = os.path.join(TEMP_DIRECTORY, '%s.csv' % name)
-                shutil.copyfile(local_path, named_path)
+                input_path = self.create_vrt(name, layer_path, layer)
 
-                geojson_paths.append(self.process_topojson(name, layer, named_path))
-
+            geojson_path = self.process_ogr2ogr(name, layer, input_path)
+            geojson_paths.append(self.process_topojson(name, layer, geojson_path))
 
         # Merge layers
         self.merge(geojson_paths)
@@ -166,6 +174,21 @@ class MapTurner(object):
         """
         with zipfile.ZipFile(zip_path, 'r') as z:
             z.extractall(output_path)
+
+    def create_vrt(self, layer_name, layer_path, layer):
+        vrt_path = os.path.join(TEMP_DIRECTORY, '%s.vrt' % layer_name)
+
+        vrt_body = VRT_TEMPLATE % {
+            'name': layer_name,
+            'source': layer_path,
+            'latitude': layer.get('latitude', 'latitude'),
+            'longitude': layer.get('longitude', 'longitude')
+        }
+
+        with open(vrt_path, 'w') as f:
+            f.write(vrt_body)
+
+        return vrt_path
 
     def process_ogr2ogr(self, name, layer, input_path):
         """

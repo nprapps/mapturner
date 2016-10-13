@@ -1,7 +1,14 @@
 0.2.0
 -----
 
-* Python 2.6 is no longer supported.
+* Added complete list of configuration parameters to documentation.
+* `bbox` and `where` queries now apply to `csv` layers.
+* `bbox` and `where` queries now apply to `json` layers.
+* Added progress bar (of sorts) when downloading files.
+* Improved console output.
+* Added location of downloaded data to documentation.
+* Added Python 3.4 and 3.5 support.
+* Remove Python 2.6 support.
 
 0.1.0
 -----

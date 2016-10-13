@@ -83,12 +83,29 @@ For each layer defined in the configuration file:
 
 * If path is a URL the file will be downloaded and cached locally. (It will not be redownloaded on subsequent runs.)
 * If path is to a zipped file it will be unzipped.
-* If the layer type is `shp` it will be clipped to the specified bounding box (using ogr2ogr).
-* If the layer type is `shp` and a `where` attribute is specified, the layer will be filtered by that clause.
-* All fields in the layer *not* specified in the `properties` array will be removed (to reduce file size), unless `all-properties` is specified, in which case all will be kept.
+* All layers will be clipped to the specified bounding box (using ogr2ogr).
+* For each layer, if a `where` attribute is specified, the layer data will be filtered by that clause.
+* For each layer, all fields in the layer *not* specified in the `properties` array will be removed (to reduce file size), unless `all-properties` is specified, in which case all will be kept.
+* For each layer, if an `id-property` is set, data from that property will be set as the identifier for the features in the layer.
 * The layer will be converted to [Topojson](https://github.com/mbostock/topojson/wiki/Command-Line-Reference).
 
 After each layer has been processed all of them will be concatenated into a single topojson file. Each layer's key name will be used to identify it in the output.
+
+## Complete list of configuration options
+
+For all layer types:
+
+* `type`: The type of layer. Valid types are `shp`, `json` (GeoJSON or TopoJSON), and `csv`. (Required)
+* `path`: The path (relative or absolute) to the layer data file. (Required)
+* `id-property`: A property from the data file to use as the unique identifier for features.
+* `properties`: A list of properties from the data to be kept in the output. All other properties are dropped.
+* `all-properties`: If true, then all properties are kept for this layer.
+* `where`: A SQL-like query predicate that will filter the feature data. This This uses exactly the same query syntax as [ogr2ogr](http://www.gdal.org/ogr2ogr.html).
+
+CSV layers only:
+
+* `latitude`: The name of a column in the data containing the latitude of the point/feature.
+* `longitude`: The name of a column in the data containing the longitude of the point/feature.
 
 ## Cached data
 
