@@ -11,8 +11,8 @@ Important links:
 
 You will need to have the following non-Python dependencies installed:
 
-* ogr2ogr (GDAL): available via `brew`
-* topojson: available via `npm`
+* ogr2ogr (GDAL): `brew install ogr2ogr`
+* topojson: `npm install topojson@1.6.27` (topojson 2+ does not work)
 
 mapturner itself can be installed with pip:
 
