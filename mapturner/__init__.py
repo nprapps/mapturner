@@ -9,11 +9,26 @@ import zipfile
 
 import envoy
 import requests
+from tqdm import tqdm
 import yaml
+
 
 ROOT_DIRECTORY = os.path.expanduser('~/.mapturner')
 DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'data')
 TEMP_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'tmp')
+
+SUPPORTED_FILE_TYPES = ['shp', 'json', 'csv']
+
+VRT_TEMPLATE = """
+<OGRVRTDataSource>
+    <OGRVRTLayer name="%(name)s">
+        <SrcDataSource>%(source)s</SrcDataSource>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>WGS84</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="%(longitude)s" y="%(latitude)s"/>
+    </OGRVRTLayer>
+</OGRVRTDataSource>
+"""
 
 class MapTurner(object):
     """
@@ -69,25 +84,23 @@ class MapTurner(object):
         # Process layers
         for name, layer in self.config['layers'].items():
             if 'path' not in layer:
-                print 'path missing for layer %s' % name
+                raise ValueError('Path missing for layer: %s\n' % name)
                 return
 
-            local_path = self.get_real_layer_path(layer['path'])
+            layer_path = self.get_real_layer_path(layer['path'])
 
-            print 'Processing %s' % name
+            sys.stdout.write('Layer: %s\n' % name)
 
-            if layer['type'] == 'shp':
-                geojson_path = self.process_ogr2ogr(name, layer, local_path)
-                geojson_paths.append(self.process_topojson(name, layer, geojson_path))
-            elif layer['type'] == 'json':
-                geojson_paths.append(self.process_topojson(name, layer, local_path))
+            if layer['type'] not in SUPPORTED_FILE_TYPES:
+                raise ValueError('Unsupported layer type: %s\n' % layer['type'])
+
+            if layer['type'] in ['shp', 'json']:
+                input_path = layer_path
             elif layer['type'] == 'csv':
-                named_path = os.path.join(TEMP_DIRECTORY, '%s.csv' % name)
-                shutil.copyfile(local_path, named_path)
+                input_path = self.create_vrt(name, layer_path, layer)
 
-                geojson_paths.append(self.process_topojson(name, layer, named_path))
-            else:
-                raise Exception('Unsupported layer type: %s' % layer['type'])
+            geojson_path = self.process_ogr2ogr(name, layer, input_path)
+            geojson_paths.append(self.process_topojson(name, layer, geojson_path))
 
         # Merge layers
         self.merge(geojson_paths)
@@ -102,7 +115,7 @@ class MapTurner(object):
             if self.args.verbose:
                 sys.__excepthook__(t, value, traceback)
             else:
-                sys.stderr.write('%s\n' % unicode(value).encode('utf-8'))
+                sys.stderr.write('%s\n' % str(value).encode('utf-8'))
 
         sys.excepthook = handler
 
@@ -119,12 +132,12 @@ class MapTurner(object):
             local_path = os.path.join(DATA_DIRECTORY, filename)
 
             if not os.path.exists(local_path):
-                print 'Downloading %s...' % filename
+                sys.stdout.write('* Downloading %s...\n' % filename)
                 self.download_file(path, local_path)
             elif self.args.redownload:
                 os.remove(local_path)
 
-                print 'Redownloading %s...' % filename
+                sys.stdout.write('* Redownloading %s...\n' % filename)
                 self.download_file(path, local_path)
         # Non-existant file
         elif not os.path.exists(local_path):
@@ -138,7 +151,7 @@ class MapTurner(object):
             real_path = os.path.join(DATA_DIRECTORY, slug)
 
             if not os.path.exists(real_path):
-                print 'Unzipping...'
+                sys.stdout.write('* Unzipping...\n')
                 self.unzip_file(local_path, real_path)
 
         return real_path
@@ -150,7 +163,7 @@ class MapTurner(object):
         response = requests.get(url, stream=True)
 
         with open(local_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=1024):
+            for chunk in tqdm(response.iter_content(chunk_size=1024), unit='KB'):
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
                     f.flush()
@@ -161,6 +174,21 @@ class MapTurner(object):
         """
         with zipfile.ZipFile(zip_path, 'r') as z:
             z.extractall(output_path)
+
+    def create_vrt(self, layer_name, layer_path, layer):
+        vrt_path = os.path.join(TEMP_DIRECTORY, '%s.vrt' % layer_name)
+
+        vrt_body = VRT_TEMPLATE % {
+            'name': layer_name,
+            'source': layer_path,
+            'latitude': layer.get('latitude', 'latitude'),
+            'longitude': layer.get('longitude', 'longitude')
+        }
+
+        with open(vrt_path, 'w') as f:
+            f.write(vrt_body)
+
+        return vrt_path
 
     def process_ogr2ogr(self, name, layer, input_path):
         """
@@ -187,10 +215,15 @@ class MapTurner(object):
             input_path
         ])
 
+        sys.stdout.write('* Running ogr2ogr\n')
+
+        if self.args.verbose:
+            sys.stdout.write('  %s\n' % ' '.join(ogr2ogr_cmd))
+
         r = envoy.run(' '.join(ogr2ogr_cmd))
 
         if r.status_code != 0:
-            print r.std_err
+            sys.stderr.write(r.std_err)
 
         return output_path
 
@@ -222,10 +255,15 @@ class MapTurner(object):
             input_path
         ])
 
-        s = envoy.run(' '.join(topo_cmd))
+        sys.stdout.write('* Running TopoJSON\n')
 
-        if s.std_err:
-            print s.std_err
+        if self.args.verbose:
+            sys.stdout.write('  %s\n' % ' '.join(topo_cmd))
+
+        r = envoy.run(' '.join(topo_cmd))
+
+        if r.status_code != 0:
+            sys.stderr.write(r.std_err)
 
         return output_path
 
@@ -233,13 +271,20 @@ class MapTurner(object):
         """
         Merge data layers into a single topojson file.
         """
-        r = envoy.run('topojson -o %(output_path)s --bbox -p -- %(paths)s' % {
+        merge_cmd = 'topojson -o %(output_path)s --bbox -p -- %(paths)s' % {
             'output_path': self.args.output_path,
             'paths': ' '.join(paths)
-        })
+        }
+
+        sys.stdout.write('Merging layers\n')
+
+        if self.args.verbose:
+            sys.stdout.write('  %s\n' % merge_cmd)
+
+        r = envoy.run(merge_cmd)
 
         if r.status_code != 0:
-            print r.std_err
+            sys.stderr.write(r.std_err)
 
 
 def _main():
