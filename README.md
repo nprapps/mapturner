@@ -14,13 +14,13 @@ You will need to have the following non-Python dependencies installed:
 * ogr2ogr (GDAL): `brew install ogr2ogr`
 * topojson@1.6.27: (topojson 2+ does not work)
 
-mapturner itself can be installed with pip:
+`mapturner` itself can be installed with pip:
 
 ```
 pip install mapturner
 ```
 
-Note: Since `mapturner` relies on topojson 1.x (old version of topojson), we recommend installing this version of topojson inside your project root folder by running:
+_Note_: Since `mapturner` relies on topojson 1.x (old version of topojson), we recommend installing this version of topojson inside your project root folder by running:
 
 ```
 npm install -g topojson@1.6.27 --prefix node_modules
@@ -32,7 +32,7 @@ To install topojson@1.6.27 globally instead run:
 npm install -g topojson@1.6.27
 ```
 
-`mapturner` will search first for the topojson binaries installed within the project and fallback to searching the topojson binary on your $PATH.
+`mapturner` will search first for the topojson binaries installed within the project and fallback to searching the topojson binary on your `$PATH`.
 
 
 Developer install process:
