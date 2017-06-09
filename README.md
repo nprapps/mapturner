@@ -12,13 +12,28 @@ Important links:
 You will need to have the following non-Python dependencies installed:
 
 * ogr2ogr (GDAL): `brew install ogr2ogr`
-* topojson: `npm install topojson@1.6.27` (topojson 2+ does not work)
+* topojson@1.6.27: (topojson 2+ does not work)
 
 mapturner itself can be installed with pip:
 
 ```
 pip install mapturner
 ```
+
+Note: Since `mapturner` relies on topojson 1.x (old version of topojson), we recommend installing this version of topojson inside your project root folder by running:
+
+```
+npm install -g topojson@1.6.27 --prefix node_modules
+```
+
+To install topojson@1.6.27 globally instead run:
+
+```
+npm install -g topojson@1.6.27
+```
+
+`mapturner` will search first for the topojson binaries installed within the project and fallback to searching the topojson binary on your $PATH.
+
 
 Developer install process:
 
@@ -105,4 +120,4 @@ CSV layers only:
 
 ## Cached data
 
-Cached shapefiles are storied in `~/.mapturner`. You may wish to clear this folder periodically to free up space and ensure updated shapefiles are redownloaded.
+Cached shapefiles are stored in `~/.mapturner`. You may wish to clear this folder periodically to free up space and ensure updated shapefiles are redownloaded.

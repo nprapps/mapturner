@@ -12,15 +12,15 @@ install_requires = [
 
 setup(
     name='mapturner',
-    version='0.2.0',
+    version='0.2.1',
     description='A command line utility for compiling map data.',
     long_description=open('README.md').read(),
-    author='Christopher Groskopf',
-    author_email='chrisgroskopf@gmail.com',
+    author='NPR Visuals',
+    author_email='nprapps@npr.org',
     url='https://github.com/nprapps/mapturner',
     license='MIT',
     classifiers=[
-        'Development Status :: 2 - Beta',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',

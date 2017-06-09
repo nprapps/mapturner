@@ -233,8 +233,15 @@ class MapTurner(object):
         """
         output_path = os.path.join(TEMP_DIRECTORY, '%s.topojson' % name)
 
+        # Use local topojson binary
+        topojson_binary = 'node_modules/bin/topojson'
+
+        if not os.path.exists(topojson_binary):
+            # try with global topojson binary
+            topojson_binary = 'topojson'
+
         topo_cmd = [
-            'topojson',
+            topojson_binary,
             '-o', output_path
         ]
 
@@ -271,9 +278,18 @@ class MapTurner(object):
         """
         Merge data layers into a single topojson file.
         """
-        merge_cmd = 'topojson -o %(output_path)s --bbox -p -- %(paths)s' % {
+
+        # Use local topojson binary
+        topojson_binary = 'node_modules/bin/topojson'
+
+        if not os.path.exists(topojson_binary):
+            # try with global topojson binary
+            topojson_binary = 'topojson'
+
+        merge_cmd = '%(binary)s -o %(output_path)s --bbox -p -- %(paths)s' % {
             'output_path': self.args.output_path,
-            'paths': ' '.join(paths)
+            'paths': ' '.join(paths),
+            'binary': topojson_binary
         }
 
         sys.stdout.write('Merging layers\n')
